@@ -1,0 +1,28 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 14,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default (Debug)",
+      "description": "Configure the practice bootloader with Debug flags",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build/default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "displayName": "Build Default",
+      "configurePreset": "default"
+    }
+  ]
+}
