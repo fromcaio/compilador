@@ -4,6 +4,8 @@
 #include <regex>
 #include <algorithm>
 #include <set>
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 // --- CONFIGURAÇÕES GLOBAIS DA LINGUAGEM ---
 
@@ -60,16 +62,64 @@ int classify_and_add_token(std::vector<Token>& tokens, const std::string& lexeme
     return 1;
 }
 
-// --- PONTO DE ENTRADA ---
-
-int main() {
-    std::vector<std::string> code_lines;
-    std::string input_buffer;
-
-    std::cout << "Lexer C++ | Insira o código (digite 'END' para processar):\n";
-    while (std::getline(std::cin, input_buffer) && input_buffer != "END") {
-        code_lines.push_back(input_buffer + "\n");
+// --- SAÍDA FORMATADA ---
+void verbose_output(const std::vector<Token>& tokens) {
+    std::cout << "--- TOKENS IDENTIFICADOS (VERBOSE) ---\n";
+    for (const auto& t : tokens) {
+        std::printf("[%s] '%s' (Linha: %d, Col: %d)\n", t.type.c_str(), t.text.c_str(), t.line, t.column);
     }
+}
+
+void default_output(const std::vector<Token>& tokens, const std::vector<std::string>& code_lines) {
+    for (const auto& t : tokens) {
+        // vamos imprimir a linha sublinhada onde o erro ocorreu
+        if (t.type == "ERROR") {
+            std::cerr << "Erro: " << "na linha " << t.line << ", coluna " << t.column << "\n";
+            std::cerr << code_lines[t.line - 1]; // Imprime a linha do código
+            std::cerr << std::string(t.column - 1, ' ') << "^\n"; // Aponta para a posição do erro
+        }
+    }
+}
+
+// --- PONTO DE ENTRADA ---
+// vamos receber como parametro de entrada um codigo fonte em C, flags --verbose e -o com o nome do arquivo de saida para fazer isso vamos
+
+int main(int argc, char* argv[]) {
+    std::string input_path;
+    std::string output_path = "output.json"; // Valor padrão
+    bool verbose = false;
+
+    // --- PROCESSAMENTO DE ARGUMENTOS ---
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+
+        if (arg == "--verbose" || arg == "-v") {
+            verbose = true;
+        } else if (arg == "-o" && i + 1 < argc) {
+            output_path = argv[++i];
+        } else if (input_path.empty()) {
+            input_path = arg;
+        }
+    }
+
+    if (input_path.empty()) {
+        std::cerr << "Uso: ./fcc <arquivo.fcc> [-o saida.json] [--verbose]\n";
+        return 1;
+    }
+
+    // --- LEITURA DO ARQUIVO ---
+    std::ifstream file(input_path);
+    if (!file.is_open()) {
+        std::cerr << "Erro ao abrir arquivo: " << input_path << "\n";
+        return 1;
+    }
+
+    std::vector<std::string> code_lines;
+    std::string line;
+    while (std::getline(file, line)) {
+        code_lines.push_back(line + "\n");
+    }
+    file.close();
 
     // Pré-processamento de Operadores
     std::set<char> op_start_chars;
@@ -144,11 +194,7 @@ int main() {
         }
     }
 
-    // Exibição dos Resultados
-    std::cout << "\n--- TOKENS IDENTIFICADOS ---\n";
-    for (const auto& t : tokens) {
-        std::printf("[%s] '%s' (Linha: %d, Col: %d)\n", t.type.c_str(), t.text.c_str(), t.line, t.column);
-    }
+    verbose ? verbose_output(tokens) : default_output(tokens, code_lines);
 
     return 0;
 }

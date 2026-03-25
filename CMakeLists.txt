@@ -18,12 +18,12 @@ FetchContent_MakeAvailable(json)
 # --- Project Setup ---
 include_directories(include)
 
-add_executable(compilador 
+add_executable(fcc 
     src/main.cpp 
 )
 
 # Our headers live in include/
-target_include_directories(compilador PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(fcc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Link the JSON interface target; it supplies include paths and C++ features
-target_link_libraries(compilador PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(fcc PRIVATE nlohmann_json::nlohmann_json)
