@@ -21,8 +21,27 @@ const std::string identifier_pattern     = "^[a-zA-Z_][a-zA-Z0-9_]*$";
 const std::string string_literal_pattern = "^\"(\\\\.|[^\"\\\\])*\"$";
 const std::string number_literal_pattern = "^[0-9]+(\\.[0-9]+)?$";
 
+// Variável global para controle de erros lexicais
+bool lexical_errors = false;
+
+
+// --- ESTRUTURAS DE DADOS ---
+
+namespace TokenType {
+    enum class Type {
+        KEYWORD,
+        IDENTIFIER,
+        NUMBER_LITERAL,
+        STRING_LITERAL,
+        OPERATOR,
+        SEPARATOR,
+        ERROR
+    };
+}
+
 struct Token {
-    std::string type;
+    TokenType::Type type;
+    std::string type_str; // Para saída legível
     std::string text;
     int line;
     int column;
@@ -51,12 +70,13 @@ int classify_and_add_token(std::vector<Token>& tokens, const std::string& lexeme
     static const std::regex re_num(number_literal_pattern);
     static const std::regex re_str(string_literal_pattern);
 
-    if (std::regex_match(lexeme, re_kw))       tokens.push_back({"KEYWORD", lexeme, line, col});
-    else if (std::regex_match(lexeme, re_id))  tokens.push_back({"IDENTIFIER", lexeme, line, col});
-    else if (std::regex_match(lexeme, re_num)) tokens.push_back({"NUMBER_LITERAL", lexeme, line, col});
-    else if (std::regex_match(lexeme, re_str)) tokens.push_back({"STRING_LITERAL", lexeme, line, col});
+    if (std::regex_match(lexeme, re_kw))       tokens.push_back({TokenType::Type::KEYWORD, "KEYWORD", lexeme, line, col});
+    else if (std::regex_match(lexeme, re_id))  tokens.push_back({TokenType::Type::IDENTIFIER, "IDENTIFIER", lexeme, line, col});
+    else if (std::regex_match(lexeme, re_num)) tokens.push_back({TokenType::Type::NUMBER_LITERAL, "NUMBER_LITERAL", lexeme, line, col});
+    else if (std::regex_match(lexeme, re_str)) tokens.push_back({TokenType::Type::STRING_LITERAL, "STRING_LITERAL", lexeme, line, col});
     else {
-        tokens.push_back({"ERROR", lexeme, line, col});
+        tokens.push_back({TokenType::Type::ERROR, "ERROR", lexeme, line, col});
+        if (lexical_errors == false) lexical_errors = true;
         return 0;
     }
     return 1;
@@ -66,14 +86,14 @@ int classify_and_add_token(std::vector<Token>& tokens, const std::string& lexeme
 void verbose_output(const std::vector<Token>& tokens) {
     std::cout << "--- TOKENS IDENTIFICADOS (VERBOSE) ---\n";
     for (const auto& t : tokens) {
-        std::printf("[%s] '%s' (Linha: %d, Col: %d)\n", t.type.c_str(), t.text.c_str(), t.line, t.column);
+        std::printf("[%s] '%s' (Linha: %d, Col: %d)\n", t.type_str.c_str(), t.text.c_str(), t.line, t.column);
     }
 }
 
 void default_output(const std::vector<Token>& tokens, const std::vector<std::string>& code_lines) {
     for (const auto& t : tokens) {
         // vamos imprimir a linha sublinhada onde o erro ocorreu
-        if (t.type == "ERROR") {
+        if (t.type == TokenType::Type::ERROR) {
             std::cerr << "Erro: " << "na linha " << t.line << ", coluna " << t.column << "\n";
             std::cerr << code_lines[t.line - 1]; // Imprime a linha do código
             std::cerr << std::string(t.column - 1, ' ') << "^\n"; // Aponta para a posição do erro
@@ -179,7 +199,7 @@ int main(int argc, char* argv[]) {
                 if (is_op_trigger && j + 1 < line.size()) {
                     std::string pot_op = std::string(1, c) + line[j+1];
                     if (std::find(multi_char_ops.begin(), multi_char_ops.end(), pot_op) != multi_char_ops.end()) {
-                        tokens.push_back({"OPERATOR", pot_op, line_num, (int)j + 1});
+                        tokens.push_back({TokenType::Type::OPERATOR, "OPERATOR", pot_op, line_num, (int)j + 1});
                         j++; // Consome o caractere extra
                         continue;
                     }
@@ -187,7 +207,8 @@ int main(int argc, char* argv[]) {
 
                 // Separador ou Operador Simples
                 std::string type = is_op_trigger ? "OPERATOR" : "SEPARATOR";
-                tokens.push_back({type, std::string(1, c), line_num, (int)j + 1});
+                TokenType::Type token_type = is_op_trigger ? TokenType::Type::OPERATOR : TokenType::Type::SEPARATOR;
+                tokens.push_back({token_type, type, std::string(1, c), line_num, (int)j + 1});
             } else {
                 current_lexeme += c;
             }
@@ -195,6 +216,31 @@ int main(int argc, char* argv[]) {
     }
 
     verbose ? verbose_output(tokens) : default_output(tokens, code_lines);
+
+    if (lexical_errors == false) {
+        // --- SAÍDA JSON ---
+        nlohmann::json j_tokens = nlohmann::json::array();
+        for (const auto& t : tokens) {
+            j_tokens.push_back({
+                {"type", t.type},
+                {"string_type", t.type_str},
+                {"text", t.text},
+                {"line", t.line},
+                {"column", t.column}
+            });
+        }
+
+        std::ofstream out_file(output_path);
+        if (out_file.is_open()) {
+            out_file << j_tokens.dump(4); // Indentação de 4 espaços
+            out_file.close();
+            std::cout << "Tokens salvos em: " << output_path << "\n";
+        } else {
+            std::cerr << "Erro ao salvar arquivo: " << output_path << "\n";
+        }
+    } else {
+        std::cerr << "Foram encontrados erros lexicais. Nenhum arquivo de saída foi gerado.\n";
+    }
 
     return 0;
 }
