@@ -1,12 +1,6 @@
-Para finalizar o seu projeto com chave de ouro, o `README.md` deve ser o cartão de visitas que explica não apenas como rodar o código, mas as decisões de engenharia que você tomou (como o uso de `static`, `namespaces` anônimos e o autômato de comentários).
-
-Aqui está uma proposta de **README profissional** em Markdown para o seu analisador léxico:
-
------
-
 # Analisador Léxico para Linguagem FCC
 
-Este projeto consiste em um **Analisador Léxico (Lexer)** robusto desenvolvido em C++ para a disciplina de Compiladores (Mestrado). O objetivo é transformar um código-fonte de entrada em uma sequência de tokens classificados, gerando um relatório detalhado em formato JSON.
+Este projeto consiste em um **Analisador Léxico (Lexer)** desenvolvido em C++ para a disciplina de Compiladores. O objetivo é transformar um código-fonte de entrada em uma sequência de tokens classificados, gerando um relatório detalhado em formato JSON.
 
 ## 🚀 Funcionalidades
 
@@ -18,8 +12,6 @@ Este projeto consiste em um **Analisador Léxico (Lexer)** robusto desenvolvido 
   - **Exportação JSON**: Gera um arquivo estruturado com todos os tokens processados para integração com analisadores sintáticos.
 
 ## 🛠 Decisões de Implementação
-
-Para garantir alta performance e manutenibilidade, foram aplicados padrões avançados de C++:
 
   * **Namespaces Anônimos**: Utilizados para isolar funções auxiliares e padrões de Regex, evitando poluição do escopo global e conflitos de ligação (*linkage*).
   * **Variáveis Static**: Os objetos `std::regex` são declarados como estáticos dentro das funções de classificação. Isso garante que a "compilação" do autômato da Regex ocorra apenas uma vez, otimizando drasticamente a velocidade de processamento.
@@ -114,7 +106,3 @@ O arquivo gerado segue este formato:
 ## ✒️ Autor
 
   * **Caio Reis** - [FromCaio](https://github.com/fromcaio)
-
-  Perfeito, Caio. Para um projeto de nível de mestrado, o uso de **CMake** é o padrão ouro de mercado, pois garante que qualquer pessoa consiga reproduzir seu ambiente de compilação, independentemente do Sistema Operacional ou da IDE.
-
-Vou atualizar a seção de compilação do seu **README.md** para refletir o uso do `CMakeLists.txt` e do `CMakePresets.json`.
