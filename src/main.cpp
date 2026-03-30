@@ -18,7 +18,7 @@ const std::vector<std::string> keywords         = {"if", "else", "while", "for",
 
 // Definições de Regex (PCRE compatível)
 const std::string identifier_pattern     = "^[a-zA-Z_][a-zA-Z0-9_]*$";
-const std::string string_literal_pattern = "^\"(\\\\.|[^\"\\\\])*\"$";
+const std::string string_literal_pattern = R"(^"(\\.|[^"\\])*"$)";
 const std::string number_literal_pattern = "^[0-9]+(\\.[0-9]+)?$";
 
 // Variável global para controle de erros lexicais
