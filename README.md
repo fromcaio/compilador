@@ -8,15 +8,18 @@ Este projeto consiste em um **Analisador Léxico (Lexer)** desenvolvido em C++ p
   - **Suporte a Comentários**: Ignora corretamente comentários de linha (`//`) e blocos de múltiplas linhas (`/* ... */`).
   - **Tratamento de Strings**: Suporta aspas escapadas (`\"`) dentro de strings literais.
   - **Interface de Linha de Comando (CLI)**: Suporte a flags para modo verbose e definição de arquivo de saída.
-  - **Diagnóstico de Erros**: Aponta a localização exata (linha e coluna) de erros léxicos com indicação visual no console.
-  - **Exportação JSON**: Gera um arquivo estruturado com todos os tokens processados para integração com analisadores sintáticos.
+  - **Diagnóstico de Erros Avançado**: Identifica e aponta a localização exata (linha e coluna) de erros específicos:
+    - `LEXICAL_ERROR_MALFORMED_NUMBER`: Números com múltiplos pontos decimais ou seguidos por letras/sublinhados.
+    - `LEXICAL_ERROR_UNCLOSED_STRING`: Strings que não foram fechadas antes do fim da linha ou arquivo.
+    - `LEXICAL_ERROR_UNCLOSED_COMMENT`: Comentários de bloco (`/*`) que não foram fechados.
+  - **Exportação JSON**: Gera um arquivo estruturado com todos os tokens processados (somente se não houver erros léxicos).
 
 ## 🛠 Decisões de Implementação
 
   * **Namespaces Anônimos**: Utilizados para isolar funções auxiliares e padrões de Regex, evitando poluição do escopo global e conflitos de ligação (*linkage*).
   * **Variáveis Static**: Os objetos `std::regex` são declarados como estáticos dentro das funções de classificação. Isso garante que a "compilação" do autômato da Regex ocorra apenas uma vez, otimizando drasticamente a velocidade de processamento.
   * **Lookahead (Olhar à frente)**: Implementação manual de verificação de caracteres subsequentes para distinguir operadores simples (`>`) de compostos (`>=`).
-  * **Gerenciamento de Estado**: Uso de flags de estado para tratar o contexto de comentários de bloco que cruzam múltiplas linhas.
+  * **Gerenciamento de Estado**: Uso de flags de estado para tratar o contexto de comentários de bloco que cruzam múltiplas linhas e detecção de fechamento pendente.
 
 ## 📋 Pré-requisitos
 
@@ -39,7 +42,7 @@ Se o seu ambiente suporta Presets (como VS Code, CLion ou CMake via CLI 3.19+), 
 cmake --preset default
 
 # Executar o build
-cmake --build --build/default
+cmake --build build/default
 ```
 
 ### Compilação Manual (Caso não use Presets)
@@ -69,34 +72,36 @@ A execução básica requer um arquivo de entrada:
 **Exemplo Completo:**
 
 ```bash
-./fcc_lexer exemplo.fcc --verbose -o tokens.json
+./fcc exemplo.fcc --verbose -o tokens.json
 ```
 
 ## 🔍 Exemplo de Saída (Erro Léxico)
 
-Caso o Lexer encontre um caractere inválido, ele exibirá:
+Caso o Lexer encontre um erro, ele exibirá a mensagem e a linha sublinhada:
 
 ```text
-Erro: na linha 5, coluna 12
-int valor = @50;
+Erro: LEXICAL_ERROR_MALFORMED_NUMBER na linha 5, coluna 12
+int valor = 10.5.2;
             ^
 ```
 
 ## 📁 Estrutura do JSON de Saída
 
-O arquivo gerado segue este formato:
+O arquivo gerado segue este formato (quando não há erros):
 
 ```json
 [
   {
-    "type": "KEYWORD",
-    "lexeme": "int",
+    "type": 0,
+    "string_type": "KEYWORD",
+    "text": "int",
     "line": 1,
     "column": 1
   },
   {
-    "type": "IDENTIFIER",
-    "lexeme": "soma",
+    "type": 1,
+    "string_type": "IDENTIFIER",
+    "text": "soma",
     "line": 1,
     "column": 5
   }

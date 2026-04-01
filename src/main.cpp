@@ -24,7 +24,8 @@ const std::string number_literal_pattern = "^[0-9]+(\\.[0-9]+)?$";
 // Definições de Regex dos Erros LEXICAL_ERROR_INVALID_CHAR, LEXICAL_ERROR_MALFORMED_NUMBER, LEXICAL_ERROR_UNCLOSED_STRING, LEXICAL_ERROR_UNCLOSED_COMMENT
 const std::string lexical_error_malformed_number = R"(^[0-9]+(\.[0-9]+){2,}.*|^[0-9]+[a-zA-Z_]+.*)";
 const std::string lexical_error_unclosed_string = R"(^"(\\.|[^"\\])*$)";
-// Variável global para controle de erros lexicais
+
+// Variável global que indica a presença de erros
 bool lexical_errors = false;
 
 
@@ -44,7 +45,7 @@ namespace TokenType {
 
 struct Token {
     TokenType::Type type;
-    std::string type_str; // Para saída legível
+    std::string type_str; // Para especificação de erros
     std::string text;
     int line;
     int column;
