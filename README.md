@@ -9,9 +9,10 @@ Este projeto consiste em um **Analisador Léxico (Lexer)** desenvolvido em C++ p
   - **Tratamento de Strings**: Suporta aspas escapadas (`\"`) dentro de strings literais.
   - **Interface de Linha de Comando (CLI)**: Suporte a flags para modo verbose e definição de arquivo de saída.
   - **Diagnóstico de Erros Avançado**: Identifica e aponta a localização exata (linha e coluna) de erros específicos:
-    - `LEXICAL_ERROR_MALFORMED_NUMBER`: Números com múltiplos pontos decimais ou seguidos por letras/sublinhados.
-    - `LEXICAL_ERROR_UNCLOSED_STRING`: Strings que não foram fechadas antes do fim da linha ou arquivo.
-    - `LEXICAL_ERROR_UNCLOSED_COMMENT`: Comentários de bloco (`/*`) que não foram fechados.
+    - `LEXICAL_ERROR_INVALID_CHAR`: Identifica símbolos que não pertencem ao alfabeto da linguagem (ex: `@`, `#`, `$`) ou que não podem formar tokens válidos no contexto atual.
+    - `LEXICAL_ERROR_MALFORMED_NUMBER`: Detecta constantes numéricas com formato inválido, como múltiplos pontos decimais ou sufixos não permitidos (ex: `10.5.2`, `123abc`).
+    - `LEXICAL_ERROR_UNCLOSED_STRING`: Aponta strings literais que não foram encerradas com aspas antes do fim da linha ou do arquivo.
+    - `LEXICAL_ERROR_UNCLOSED_COMMENT`: Indica que um comentário de bloco (`/* ... */`) foi iniciado, mas nunca finalizado.
   - **Exportação JSON**: Gera um arquivo estruturado com todos os tokens processados (somente se não houver erros léxicos).
 
 ## 🛠 Decisões de Implementação

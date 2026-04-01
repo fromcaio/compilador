@@ -81,9 +81,10 @@ int classify_and_add_token(std::vector<size_t> &token_error_indices, std::vector
     else if (std::regex_match(lexeme, re_num)) tokens.push_back({TokenType::Type::NUMBER_LITERAL, "NUMBER_LITERAL", lexeme, line, col});
     else if (std::regex_match(lexeme, re_str)) tokens.push_back({TokenType::Type::STRING_LITERAL, "STRING_LITERAL", lexeme, line, col});
     else {
-        std::string tmp;
+        std::string tmp = "LEXICAL_ERROR_INVALID_CHAR";
         if (std::regex_match(lexeme, re_err_num)) tmp = "LEXICAL_ERROR_MALFORMED_NUMBER";
-        if (std::regex_match(lexeme, re_err_string)) tmp = "LEXICAL_ERROR_UNCLOSED_STRING";
+        else if (std::regex_match(lexeme, re_err_string)) tmp = "LEXICAL_ERROR_UNCLOSED_STRING";
+        
         tokens.push_back({TokenType::Type::ERROR, tmp, lexeme, line, col});
         if (lexical_errors == false) lexical_errors = true;
         token_error_indices.push_back(tokens.size() - 1);
