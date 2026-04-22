@@ -21,8 +21,12 @@ FetchContent_MakeAvailable(json)
 # --- Project Setup ---
 include_directories(include)
 
-add_executable(fcc 
-    src/main.cpp 
+add_executable(fcc
+        src/SourceFiles/main.cpp
+        src/SourceFiles/lexical_analyser.cpp
+        src/HeaderFiles/lexical_analyser.h
+        src/HeaderFiles/syntactic_analyser.h
+        src/SourceFiles/syntactic_analyser.cpp
 )
 
 # Our headers live in include/
