@@ -30,7 +30,8 @@ namespace TokenType {
         // Separadores e Delimitadores
         L_PAREN, R_PAREN, L_BRACE, R_BRACE, L_BRACKET, R_BRACKET,
         SEMICOLON, COMMA, COLON,
-        ERROR
+        // Controle Interno do Analisador
+        EOF_TOKEN, ERROR
     };
 }
 
@@ -150,6 +151,5 @@ void verbose_output(const std::vector<Token> &);
 
 void default_output(const std::vector<Token> &, const std::vector<std::string> &,
                     const std::vector<size_t> &);
-
 
 #endif //BOOTLOADER_LEXICALANALYSER_H

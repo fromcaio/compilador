@@ -57,10 +57,14 @@ O executável gerado será o `fcc` (ou `fcc.exe` no Windows), localizado dentro 
 
 ## 📖 Como Usar
 
-A execução básica requer um arquivo de entrada:
+A execução básica requer um arquivo de entrada, que pode ser um código-fonte (`.c`, `.fcc`) ou um arquivo de tokens (`.json`):
 
 ```bash
+# Para compilar um código-fonte
 ./fcc arquivo_fonte.fcc
+
+# Para iniciar a análise sintática a partir de um arquivo de tokens
+./fcc tokens.json
 ```
 
 ### Flags Disponíveis:
@@ -69,11 +73,20 @@ A execução básica requer um arquivo de entrada:
 | :--- | :--- |
 | `-v`, `--verbose` | Exibe a lista de tokens detalhada diretamente no console. |
 | `-o <nome.json>` | Define o nome do arquivo JSON de saída (padrão: `output.json`). |
+| `-l` | Executa apenas a análise léxica e salva os tokens no arquivo de saída. |
+| `-h`, `--help` | Mostra uma mensagem de ajuda com todas as opções. |
 
-**Exemplo Completo:**
+**Exemplos Completos:**
 
 ```bash
+# Obter ajuda
+./fcc --help
+
+# Compilar um arquivo com saída verbosa e nome de saída customizado
 ./fcc exemplo.fcc --verbose -o tokens.json
+
+# Gerar apenas os tokens de um arquivo
+./fcc exemplo.fcc -l -o tokens.json
 ```
 
 ## 🔍 Exemplo de Saída (Erro Léxico)

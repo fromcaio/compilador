@@ -2,7 +2,6 @@
 // Created by fc on 4/20/26.
 //
 #include "../HeaderFiles/lexical_analyser.h"
-#include "../HeaderFiles/lexical_analyser.h"
 #include <algorithm>
 #include <fstream>
 #include <regex>
@@ -78,11 +77,12 @@ std::string token_type_to_string(TokenType::Type type) {
         if (entry.type == type) return entry.type_name;
     }
 
-    // Casos que não estão no reserved_map (como IDENTIFIER, NUMBER_LITERAL, etc.)
+    // Casos que não estão no reserved_map
     switch (type) {
         case TokenType::Type::IDENTIFIER:     return "IDENTIFIER";
         case TokenType::Type::NUMBER_LITERAL: return "NUMBER_LITERAL";
         case TokenType::Type::STRING_LITERAL: return "STRING_LITERAL";
+        case TokenType::Type::EOF_TOKEN:      return "EOF_TOKEN";
         case TokenType::Type::ERROR:          return "ERROR";
         default:                              return "UNKNOWN_TOKEN";
     }
@@ -137,9 +137,7 @@ void run_lexical_analysis(const std::vector<std::string> &code_lines, std::vecto
 
     const auto& op_triggers = get_operator_triggers();
     bool in_block_comment = false;
-    bool string_literal_started = false;
     int block_comment_line, block_comment_col;
-    int str_line, str_col;
     std::string current_lexeme;
 
     for (size_t i = 0; i < code_lines.size(); ++i) {
@@ -199,10 +197,12 @@ void run_lexical_analysis(const std::vector<std::string> &code_lines, std::vecto
         }
     }
 
-    // Verificações de fechamento (Comentários/Strings) omitidas para brevidade, mas devem ser mantidas
+    // Injeção explícita do EOF_TOKEN para guiar o Parser de forma segura
+    int last_line = code_lines.empty() ? 1 : static_cast<int>(code_lines.size());
+    int last_col = code_lines.empty() ? 1 : static_cast<int>(code_lines.back().size() + 1);
+    tokens.push_back({TokenType::Type::EOF_TOKEN, "EOF_TOKEN", "EOF", last_line, last_col});
 }
 
-// ... verbose_output e default_output permanecem iguais
 // --- SAÍDA FORMATADA ---
 void verbose_output(const std::vector<Token> &tokens) {
     std::cout << "--- TOKENS IDENTIFICADOS (VERBOSE) ---\n";
