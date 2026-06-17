@@ -1,5 +1,5 @@
 int globalVar;
-float values[10];
+int values[10];
 
 int sum(int a, int b) {
     int result = a + b;
@@ -19,6 +19,6 @@ void main() {
     }
 
     for (; i > 0; i--) {
-        print(values[i]);
+        values[i] = sum(values[i], i);
     }
 }

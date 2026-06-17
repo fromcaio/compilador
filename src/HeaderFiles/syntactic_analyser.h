@@ -5,26 +5,21 @@
 #ifndef BOOTLOADER_SYNTACTIC_ANALYSER_H
 #define BOOTLOADER_SYNTACTIC_ANALYSER_H
 
-#include "lexical_analyser.h"
+#include "semantic_analyser.h"
 #include <vector>
 
-// Estrutura provisória da árvore sintática (para não quebrar a main)
-// Será implementada nas próximas etapas.
-struct syntax_tree {
-    int dummy;
-};
+// --- PONTO DE ENTRADA DO ANALISADOR SINTÁTICO ---
+// Retorna true se a análise concluiu sem erros sintáticos.
+bool syntactic_analyser(std::vector<Token>& tokens, bool verbose);
 
 // --- FUNÇÕES DE UTILIDADE LÉXICA ---
 Token peek();
 Token peek_next();
 void advance();
 void match(TokenType::Type expected);
-void synchronize(); // Recuperação de modo pânico
+void synchronize();
 bool is_data_type(TokenType::Type type);
-
-// --- PONTO DE ENTRADA DO ANALISADOR SINTÁTICO ---
-syntax_tree syntactic_analyser(std::vector<Token>& tokens, bool verbose);
-
+bool is_assign_op(TokenType::Type type);
 
 // ==========================================
 // MÉTODOS DO RECURSIVE DESCENT PARSER (LL1)
@@ -33,14 +28,14 @@ syntax_tree syntactic_analyser(std::vector<Token>& tokens, bool verbose);
 // --- ESTRUTURA GLOBAL ---
 void parse_Program();
 void parse_GlobalDecl();
-void parse_VarDeclTail();
+void parse_VarDeclTail(TokenType::Type expected = TYPE_UNRESOLVED);
 void parse_FuncDeclTail();
 
 // --- PARÂMETROS E BLOCOS ---
 void parse_Params();
 void parse_Param();
 void parse_ParamsTail();
-void parse_Block();
+void parse_Block(bool manage_scope = true);
 
 // --- STATEMENTS (COMANDOS) ---
 void parse_Statements();
@@ -57,33 +52,33 @@ void parse_BreakStmt();
 void parse_ContinueStmt();
 void parse_ExprStmt();
 
-// --- EXPRESSÕES (EXPRESSIONS) ---
-void parse_Expr();
-void parse_AssignTail();
+// --- EXPRESSÕES (retornam o tipo inferido da subexpressão) ---
+TokenType::Type parse_Expr();
+TokenType::Type parse_AssignTail(TokenType::Type left_type);
 
-void parse_LogicalOrExpr();
-void parse_LogicalOrTail();
+TokenType::Type parse_LogicalOrExpr();
+TokenType::Type parse_LogicalOrTail(TokenType::Type left_type);
 
-void parse_LogicalAndExpr();
-void parse_LogicalAndTail();
+TokenType::Type parse_LogicalAndExpr();
+TokenType::Type parse_LogicalAndTail(TokenType::Type left_type);
 
-void parse_EqExpr();
-void parse_EqTail();
+TokenType::Type parse_EqExpr();
+TokenType::Type parse_EqTail(TokenType::Type left_type);
 
-void parse_RelExpr();
-void parse_RelTail();
+TokenType::Type parse_RelExpr();
+TokenType::Type parse_RelTail(TokenType::Type left_type);
 
-void parse_AddExpr();
-void parse_AddTail();
+TokenType::Type parse_AddExpr();
+TokenType::Type parse_AddTail(TokenType::Type left_type);
 
-void parse_MultExpr();
-void parse_MultTail();
+TokenType::Type parse_MultExpr();
+TokenType::Type parse_MultTail(TokenType::Type left_type);
 
-void parse_UnaryExpr();
+TokenType::Type parse_UnaryExpr();
+TokenType::Type parse_PrimaryExpr();
+TokenType::Type parse_PostfixTail(TokenType::Type base_type);
 
-void parse_PrimaryExpr();
-void parse_PostfixTail();
-
+// Argumentos de chamada — tipo ignorado (sem checagem de assinatura)
 void parse_Args();
 void parse_ArgsTail();
 

@@ -56,7 +56,6 @@ inline const std::vector<StaticTokenEntry> reserved_map = {
     {"return",   TokenType::Type::KW_RETURN,      "KW_RETURN"},
     {"break",    TokenType::Type::KW_BREAK,       "KW_BREAK"},
     {"continue", TokenType::Type::KW_CONTINUE,    "KW_CONTINUE"},
-    {"main",     TokenType::Type::KW_MAIN,        "KW_MAIN"},
 
     // Operadores Aritméticos e Atribuição
     {"=",        TokenType::Type::OP_ASSIGN,       "OP_ASSIGN"},

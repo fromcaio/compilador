@@ -25,6 +25,8 @@ add_executable(fcc
         src/SourceFiles/main.cpp
         src/SourceFiles/lexical_analyser.cpp
         src/HeaderFiles/lexical_analyser.h
+        src/HeaderFiles/semantic_analyser.h
+        src/SourceFiles/semantic_analyser.cpp
         src/HeaderFiles/syntactic_analyser.h
         src/SourceFiles/syntactic_analyser.cpp
 )
