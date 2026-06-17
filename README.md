@@ -1,127 +1,187 @@
-# Analisador Léxico para Linguagem FCC
+# Compilador FCC
 
-Este projeto consiste em um **Analisador Léxico (Lexer)** desenvolvido em C++ para a disciplina de Compiladores. O objetivo é transformar um código-fonte de entrada em uma sequência de tokens classificados, gerando um relatório detalhado em formato JSON.
+Compilador para uma versão simplificada da linguagem C, desenvolvido em C++ para a disciplina de Compiladores. Implementa as três fases de análise — léxica, sintática e semântica — de forma modular e sem uso de orientação a objetos.
 
-## 🚀 Funcionalidades
+## Fases Implementadas
 
-  - **Tokenização Completa**: Identifica palavras-chave, identificadores, números literais, strings e operadores.
-  - **Suporte a Comentários**: Ignora corretamente comentários de linha (`//`) e blocos de múltiplas linhas (`/* ... */`).
-  - **Tratamento de Strings**: Suporta aspas escapadas (`\"`) dentro de strings literais.
-  - **Interface de Linha de Comando (CLI)**: Suporte a flags para modo verbose e definição de arquivo de saída.
-  - **Diagnóstico de Erros Avançado**: Identifica e aponta a localização exata (linha e coluna) de erros específicos:
-    - `LEXICAL_ERROR_INVALID_CHAR`: Identifica símbolos que não pertencem ao alfabeto da linguagem (ex: `@`, `#`, `$`) ou que não podem formar tokens válidos no contexto atual.
-    - `LEXICAL_ERROR_MALFORMED_NUMBER`: Detecta constantes numéricas com formato inválido, como múltiplos pontos decimais ou sufixos não permitidos (ex: `10.5.2`, `123abc`).
-    - `LEXICAL_ERROR_UNCLOSED_STRING`: Aponta strings literais que não foram encerradas com aspas antes do fim da linha ou do arquivo.
-    - `LEXICAL_ERROR_UNCLOSED_COMMENT`: Indica que um comentário de bloco (`/* ... */`) foi iniciado, mas nunca finalizado.
-  - **Exportação JSON**: Gera um arquivo estruturado com todos os tokens processados (somente se não houver erros léxicos).
+### 1. Analisador Léxico (`lexical_analyser`)
 
-## 🛠 Decisões de Implementação
+Transforma o código-fonte em uma sequência de tokens classificados.
 
-  * **Namespaces Anônimos**: Utilizados para isolar funções auxiliares e padrões de Regex, evitando poluição do escopo global e conflitos de ligação (*linkage*).
-  * **Variáveis Static**: Os objetos `std::regex` são declarados como estáticos dentro das funções de classificação. Isso garante que a "compilação" do autômato da Regex ocorra apenas uma vez, otimizando drasticamente a velocidade de processamento.
-  * **Lookahead (Olhar à frente)**: Implementação manual de verificação de caracteres subsequentes para distinguir operadores simples (`>`) de compostos (`>=`).
-  * **Gerenciamento de Estado**: Uso de flags de estado para tratar o contexto de comentários de bloco que cruzam múltiplas linhas e detecção de fechamento pendente.
+- Reconhece palavras-chave, identificadores, literais numéricos, strings e operadores
+- Suporte a comentários de linha (`//`) e de bloco (`/* ... */`)
+- Lookahead manual para operadores compostos (`>=`, `++`, `+=`, etc.)
+- Detecção de erros léxicos com localização exata (linha e coluna):
+  - `LEXICAL_ERROR_INVALID_CHAR` — símbolo fora do alfabeto da linguagem
+  - `LEXICAL_ERROR_MALFORMED_NUMBER` — constante numérica inválida (ex: `10.5.2`, `123abc`)
+  - `LEXICAL_ERROR_UNCLOSED_STRING` — string sem fechamento na mesma linha
+  - `LEXICAL_ERROR_UNCLOSED_COMMENT` — bloco de comentário não encerrado
+- Exportação dos tokens para JSON via flag `-l`
 
-## 📋 Pré-requisitos
+### 2. Analisador Sintático (`syntactic_analyser`)
 
-  - Compilador C++ compatível com o padrão **C++17** ou superior (GCC, Clang ou MSVC).
-  - Biblioteca `nlohmann/json` (incluída no projeto ou via gerenciador de pacotes).
+Parser recursivo descendente (LL(1)) que valida a estrutura gramatical do programa.
 
-## 🛠 Compilação e Build
+- Reconhece declarações globais (variáveis e funções), blocos, comandos e expressões
+- Precedência de operadores implementada via hierarquia de funções (`parse_AddExpr`, `parse_MultExpr`, etc.)
+- Recuperação de erros em modo pânico (`synchronize`) para continuar a análise após falhas
+- Suporte a: `if/else`, `while`, `for`, `return`, `break`, `continue`, arrays e chamadas de função
 
-Este projeto utiliza **CMake** para gerenciar as dependências e o processo de build. Para facilitar a configuração, incluímos um arquivo `CMakePresets.json`.
+### 3. Analisador Semântico (`semantic_analyser`)
 
-### Requisitos
-* **CMake** 3.19 ou superior.
-* **Compilador C++** com suporte a C++17 (GCC 9+, Clang 10+ ou MSVC 2019+).
+Executa verificações de significado integradas ao parser, sem construção de AST.
 
-### Usando CMake Presets (Recomendado)
-Se o seu ambiente suporta Presets (como VS Code, CLion ou CMake via CLI 3.19+), você pode configurar e compilar com:
+- **Tabela de símbolos** com nome, tipo, categoria (variável/função), escopo e linha de declaração
+- **Gerenciamento de escopos** aninhados com campo `active` — símbolos são desativados ao sair do escopo e mantidos na tabela para impressão posterior
+- Erros detectados:
+  - Variável não declarada
+  - Função não declarada
+  - Redeclaração no mesmo escopo
+  - Tipo incompatível em inicialização, atribuição ou operação aritmética/lógica
+  - Retorno de valor em função `void`
+  - Tipo de retorno incompatível com a declaração da função
+  - Índice de array de tipo diferente de `int`
+
+## Gramática Suportada
+
+```
+Program      → GlobalDecl*
+GlobalDecl   → Type IDENTIFIER (FuncDeclTail | VarDeclTail)
+FuncDeclTail → '(' Params ')' Block
+VarDeclTail  → ('=' Expr | '[' NUMBER ']')? ';'
+Params       → (Param (',' Param)*)?
+Param        → Type IDENTIFIER
+Block        → '{' Statement* '}'
+Statement    → VarDeclStmt | IfStmt | WhileStmt | ForStmt
+             | ReturnStmt | BreakStmt | ContinueStmt | Block | ExprStmt
+Expr         → LogicalOr (AssignOp Expr)?
+```
+
+Expressões seguem precedência padrão: atribuição < lógico OR < lógico AND < igualdade < relacional < adição < multiplicação < unário < primário/postfix.
+
+## Pré-requisitos
+
+- Compilador C++ com suporte a **C++17** (GCC 9+, Clang 10+ ou MSVC 2019+)
+- **CMake 3.14** ou superior
+- A biblioteca `nlohmann/json` é baixada automaticamente via `FetchContent`
+
+## Compilação
 
 ```bash
-# Configurar o projeto usando o preset padrão
+# Configurar (apenas na primeira vez)
 cmake --preset default
 
-# Executar o build
+# Compilar
 cmake --build build/default
 ```
 
-### Compilação Manual (Caso não use Presets)
-```bash
-mkdir build && cd build
-cmake ..
-make
-```
+O executável gerado é `fcc` (ou `fcc.exe` no Windows) dentro de `build/default/`.
 
-O executável gerado será o `fcc` (ou `fcc.exe` no Windows), localizado dentro da pasta `build`.
-
-## 📖 Como Usar
-
-A execução básica requer um arquivo de entrada, que pode ser um código-fonte (`.c`, `.fcc`) ou um arquivo de tokens (`.json`):
+## Uso
 
 ```bash
-# Para compilar um código-fonte
-./fcc arquivo_fonte.fcc
-
-# Para iniciar a análise sintática a partir de um arquivo de tokens
-./fcc tokens.json
+fcc <entrada.c | entrada.json> [opções]
 ```
 
-### Flags Disponíveis:
+### Flags
 
 | Flag | Descrição |
 | :--- | :--- |
-| `-v`, `--verbose` | Exibe a lista de tokens detalhada diretamente no console. |
-| `-o <nome.json>` | Define o nome do arquivo JSON de saída (padrão: `output.json`). |
-| `-l` | Executa apenas a análise léxica e salva os tokens no arquivo de saída. |
-| `-h`, `--help` | Mostra uma mensagem de ajuda com todas as opções. |
+| `-v`, `--verbose` | Saída detalhada de todas as fases + tabela de símbolos |
+| `--vlex` | Saída detalhada apenas da análise léxica |
+| `--vsyn` | Trace das regras gramaticais durante a análise sintática |
+| `-s`, `--sym` | Imprime a tabela de símbolos ao final |
+| `-l` | Executa apenas a análise léxica e salva os tokens em JSON |
+| `-o <arquivo>` | Nome do arquivo de saída para tokens (padrão: `output.json`) |
+| `-h`, `--help` | Exibe a ajuda |
 
-**Exemplos Completos:**
+### Exemplos
 
 ```bash
-# Obter ajuda
-./fcc --help
+# Análise completa silenciosa
+fcc programa.c
 
-# Compilar um arquivo com saída verbosa e nome de saída customizado
-./fcc exemplo.fcc --verbose -o tokens.json
+# Análise com tabela de símbolos
+fcc programa.c --sym
 
-# Gerar apenas os tokens de um arquivo
-./fcc exemplo.fcc -l -o tokens.json
+# Análise completa com saída detalhada
+fcc programa.c -v
+
+# Apenas tokenização, salva em arquivo
+fcc programa.c -l -o tokens.json
+
+# Retomar análise sintática a partir de tokens salvos
+fcc tokens.json --sym
 ```
 
-## 🔍 Exemplo de Saída (Erro Léxico)
+## Exemplos de Saída
 
-Caso o Lexer encontre um erro, ele exibirá a mensagem e a linha sublinhada:
+### Análise bem-sucedida com tabela de símbolos
 
-```text
+```
+$ fcc programa.c --sym
+>>> Sucesso: Analise concluida sem erros!
+
+=== TABELA DE SIMBOLOS ===
+Nome              Tipo      Escopo  Linha  Categoria
+-----------------------------------------------------
+globalVar         int       0       1      VARIAVEL
+values            int[]     0       2      VARIAVEL
+sum               int       0       4      FUNCAO
+a                 int       1       4      VARIAVEL
+b                 int       1       4      VARIAVEL
+result            int       1       5      VARIAVEL
+main              void      0       13     FUNCAO
+i                 int       1       14     VARIAVEL
+```
+
+### Erro léxico
+
+```
+$ fcc programa.c --vlex
 Erro: LEXICAL_ERROR_MALFORMED_NUMBER na linha 5, coluna 12
 int valor = 10.5.2;
             ^
 ```
 
-## 📁 Estrutura do JSON de Saída
+### Erros semânticos
 
-O arquivo gerado segue este formato (quando não há erros):
-
-```json
-[
-  {
-    "type": 0,
-    "string_type": "KEYWORD",
-    "text": "int",
-    "line": 1,
-    "column": 1
-  },
-  {
-    "type": 1,
-    "string_type": "IDENTIFIER",
-    "text": "soma",
-    "line": 1,
-    "column": 5
-  }
-]
+```
+$ fcc programa.c
+Erro Semantico (linha 4): Variavel nao declarada: 'x'
+Erro Semantico (linha 7): Tipo incompativel na atribuicao: 'int' e 'float'
+>>> Falha: A analise semantica encontrou erros.
 ```
 
-## ✒️ Autor
+## Estrutura do Projeto
 
-  * **Caio Reis** - [FromCaio](https://github.com/fromcaio)
+```
+compilador/
+├── CMakeLists.txt
+├── src/
+│   ├── HeaderFiles/
+│   │   ├── lexical_analyser.h      # Tokens, tabela estática, regex
+│   │   ├── semantic_analyser.h     # Struct Symbol, tabela de símbolos, API
+│   │   └── syntactic_analyser.h    # Declarações do parser
+│   └── SourceFiles/
+│       ├── main.cpp                # CLI e orquestração das fases
+│       ├── lexical_analyser.cpp    # Motor de tokenização
+│       ├── semantic_analyser.cpp   # Tabela de símbolos e verificações
+│       └── syntactic_analyser.cpp  # Parser + ações semânticas inline
+└── entradas/
+    ├── 01-entrada-valida.c         # Programa sintatica e semanticamente correto
+    ├── E01–E11-*.c                 # Casos de erro sintático
+    └── S01–S07-*.c                 # Casos de erro semântico
+```
+
+## Decisões de Implementação
+
+- **Sem AST**: as verificações semânticas são executadas inline durante o parsing, eliminando a necessidade de uma árvore intermediária
+- **Propagação de tipos via retorno**: funções de expressão retornam `TokenType::Type`, permitindo verificação de compatibilidade sem estado adicional
+- **`TYPE_UNRESOLVED`**: sentinela (`EOF_TOKEN`) que suprime erros em cascata quando um tipo não pode ser determinado
+- **Campo `active` na tabela de símbolos**: ao sair de um escopo, símbolos são desativados em vez de removidos — a tabela completa fica disponível para impressão ao final
+- **`main` como identificador comum**: não é palavra-chave obrigatória; qualquer função pode servir como ponto de entrada
+
+## Autor
+
+**Caio Reis** — [fromcaio](https://github.com/fromcaio)
