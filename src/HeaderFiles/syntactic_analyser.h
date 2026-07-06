@@ -5,7 +5,7 @@
 #ifndef BOOTLOADER_SYNTACTIC_ANALYSER_H
 #define BOOTLOADER_SYNTACTIC_ANALYSER_H
 
-#include "semantic_analyser.h"
+#include "code_generator.h"
 #include <vector>
 
 // --- PONTO DE ENTRADA DO ANALISADOR SINTÁTICO ---
@@ -52,31 +52,31 @@ void parse_BreakStmt();
 void parse_ContinueStmt();
 void parse_ExprStmt();
 
-// --- EXPRESSÕES (retornam o tipo inferido da subexpressão) ---
-TokenType::Type parse_Expr();
-TokenType::Type parse_AssignTail(TokenType::Type left_type);
+// --- EXPRESSÕES (retornam ExprResult: tipo semântico + registrador) ---
+ExprResult parse_Expr();
+ExprResult parse_AssignTail(ExprResult left);
 
-TokenType::Type parse_LogicalOrExpr();
-TokenType::Type parse_LogicalOrTail(TokenType::Type left_type);
+ExprResult parse_LogicalOrExpr();
+ExprResult parse_LogicalOrTail(ExprResult left);
 
-TokenType::Type parse_LogicalAndExpr();
-TokenType::Type parse_LogicalAndTail(TokenType::Type left_type);
+ExprResult parse_LogicalAndExpr();
+ExprResult parse_LogicalAndTail(ExprResult left);
 
-TokenType::Type parse_EqExpr();
-TokenType::Type parse_EqTail(TokenType::Type left_type);
+ExprResult parse_EqExpr();
+ExprResult parse_EqTail(ExprResult left);
 
-TokenType::Type parse_RelExpr();
-TokenType::Type parse_RelTail(TokenType::Type left_type);
+ExprResult parse_RelExpr();
+ExprResult parse_RelTail(ExprResult left);
 
-TokenType::Type parse_AddExpr();
-TokenType::Type parse_AddTail(TokenType::Type left_type);
+ExprResult parse_AddExpr();
+ExprResult parse_AddTail(ExprResult left);
 
-TokenType::Type parse_MultExpr();
-TokenType::Type parse_MultTail(TokenType::Type left_type);
+ExprResult parse_MultExpr();
+ExprResult parse_MultTail(ExprResult left);
 
-TokenType::Type parse_UnaryExpr();
-TokenType::Type parse_PrimaryExpr();
-TokenType::Type parse_PostfixTail(TokenType::Type base_type);
+ExprResult parse_UnaryExpr();
+ExprResult parse_PrimaryExpr();
+ExprResult parse_PostfixTail(ExprResult base);
 
 // Argumentos de chamada — tipo ignorado (sem checagem de assinatura)
 void parse_Args();

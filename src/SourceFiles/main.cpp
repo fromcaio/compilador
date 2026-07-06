@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <filesystem>
@@ -8,10 +9,12 @@
 struct CompilerConfig {
     std::string input_path;
     std::string output_path = "output.json";
-    bool verbose_lexical = false;
-    bool verbose_syntactic = false;
-    bool lexical_only = false;
-    bool show_symbols = false; // flag --sym
+    std::string asm_path    = "output.s";
+    bool verbose_lexical    = false;
+    bool verbose_syntactic  = false;
+    bool lexical_only       = false;
+    bool show_symbols       = false;
+    bool emit_asm           = false;
 };
 
 // --- HELP ---
@@ -23,13 +26,15 @@ void print_usage() {
               << "  --vsyn           Ativa a saida detalhada APENAS para a analise sintatica.\n"
               << "  -l               Executa apenas a analise lexica e salva os tokens no arquivo de saida.\n"
               << "  -s, --sym        Imprime a tabela de simbolos ao final da analise.\n"
-              << "  -o <arquivo>     Especifica o arquivo de saida para os tokens (padrao: output.json).\n"
+              << "  -c [arquivo]     Gera codigo assembly RISC-V (padrao: output.s).\n"
+              << "  -o <arquivo>     Especifica o arquivo de saida para tokens (padrao: output.json).\n"
               << "  -h, --help       Mostra esta mensagem de ajuda.\n\n"
               << "Exemplos:\n"
               << "  fcc meu_programa.c             # Analise silenciosa\n"
               << "  fcc meu_programa.c -v          # Log completo de tokens e regras sintaticas\n"
               << "  fcc meu_programa.c --sym       # Exibe a tabela de simbolos ao final\n"
-              << "  fcc meu_programa.c -v --sym    # Verbose + tabela de simbolos\n"
+              << "  fcc meu_programa.c -c          # Gera assembly em output.s\n"
+              << "  fcc meu_programa.c -c prog.s   # Gera assembly em prog.s\n"
               << "  fcc meu_programa.c -l -o t.json# Apenas analise lexica\n";
 }
 
@@ -52,6 +57,12 @@ int main(int argc, char *argv[]) {
         else if (arg == "-l")      config.lexical_only = true;
         else if (arg == "-s" || arg == "--sym") config.show_symbols = true;
         else if (arg == "-o" && i + 1 < argc)  config.output_path = argv[++i];
+        else if (arg == "-c") {
+            config.emit_asm = true;
+            // Próximo argumento pode ser o nome do arquivo (opcional)
+            if (i + 1 < argc && argv[i + 1][0] != '-')
+                config.asm_path = argv[++i];
+        }
         else if (arg[0] != '-')    config.input_path = arg;
     }
 
@@ -105,10 +116,17 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // 3. Análise Sintática + Semântica
+    // 3. Análise Sintática + Semântica (+ Geração de Código opcional)
     if (tokens.empty()) {
         std::cerr << "Erro: Nenhum token disponivel para analise.\n";
         return 1;
+    }
+
+    // Preparar buffer de assembly se necessário
+    std::ostringstream asm_buffer;
+    if (config.emit_asm) {
+        codegen_enabled  = true;
+        codegen_main_out = &asm_buffer;
     }
 
     bool syn_ok = syntactic_analyser(tokens, config.verbose_syntactic);
@@ -127,6 +145,21 @@ int main(int argc, char *argv[]) {
     // 4. Tabela de Símbolos (opcional)
     if (config.show_symbols) {
         print_symbol_table();
+    }
+
+    // 5. Escrita do assembly (somente se sem erros)
+    if (config.emit_asm) {
+        if (syn_ok && !semantic_error_found) {
+            std::ofstream asm_file(config.asm_path);
+            if (!asm_file.is_open()) {
+                std::cerr << "Erro: Nao foi possivel criar arquivo assembly: " << config.asm_path << "\n";
+                return 1;
+            }
+            asm_file << asm_buffer.str();
+            std::cout << ">>> Assembly gerado em: " << config.asm_path << "\n";
+        } else {
+            std::cerr << ">>> Assembly nao gerado devido a erros na analise.\n";
+        }
     }
 
     return (syn_ok && !semantic_error_found) ? 0 : 1;

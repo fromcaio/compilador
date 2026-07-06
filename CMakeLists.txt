@@ -29,6 +29,8 @@ add_executable(fcc
         src/SourceFiles/semantic_analyser.cpp
         src/HeaderFiles/syntactic_analyser.h
         src/SourceFiles/syntactic_analyser.cpp
+        src/HeaderFiles/code_generator.h
+        src/SourceFiles/code_generator.cpp
 )
 
 # Our headers live in include/
